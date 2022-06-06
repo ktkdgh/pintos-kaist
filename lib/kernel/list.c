@@ -473,7 +473,7 @@ list_max (struct list *list, list_less_func *less, void *aux) {
 
 /* Returns the element in LIST with the smallest value according
    to LESS given auxiliary data AUX.  If there is more than one
-   minimum, returns the one that appears earlier in the list.  If
+   minimum, returns the one that appears earlier in the list. If
    the list is empty, returns its tail. */
 struct list_elem *
 list_min (struct list *list, list_less_func *less, void *aux) {
