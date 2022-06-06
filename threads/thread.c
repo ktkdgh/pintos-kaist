@@ -238,7 +238,7 @@ tid_t thread_create(const char *name, int priority,
 
 	// * 파일 디스크립터 초기값 설정
 	t->fdt = palloc_get_page(PAL_ZERO);
-	if (t->fdt == NULL) { return TID_ERROR;	}
+	if (t->fdt == NULL)  return TID_ERROR;
 
 	t->fdt[0] = 1;
 	t->fdt[1] = 2;

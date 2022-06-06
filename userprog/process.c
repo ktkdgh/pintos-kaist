@@ -522,10 +522,8 @@ void argument_stack(char **parse, int count, void **esp) {
 
 	// * argv[i] 문자열
 	for (int i = count - 1; -1 < i; i--) {
-    // printf("%d parse[%d]: '%s' / len: %d\n", (int)*esp, i, parse[i], strlen(parse[i]));
-    *esp -= (strlen(parse[i]) + 1);
-    memcpy(*esp, parse[i], strlen(parse[i]) + 1);
-		// strlcpy(*esp, parse[i], strlen(parse[i]) + 1);
+		*esp -= (strlen(parse[i]) + 1);
+		memcpy(*esp, parse[i], strlen(parse[i]) + 1);
 		size += strlen(parse[i]) + 1;
 		argv_address[i] = *esp;
 	}
