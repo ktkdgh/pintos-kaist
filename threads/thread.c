@@ -12,6 +12,8 @@
 #include "threads/vaddr.h"
 #include "threads/fixed_point.h"
 #include "intrinsic.h"
+/* 추가 */ 
+#include "threads/malloc.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -224,6 +226,24 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.eflags = FLAG_IF;
 
 	list_push_back(&all_list, &t->allelem);
+
+	/* ------------ USERPROG ------------ */
+	t->parent_t = thread_current(); /* 부모 프로세스 저장 */
+	sema_init(&t->sema_exit, 0); /* exit 세마포어 0으로 초기화 */
+	sema_init(&t->sema_wait, 0); /* wait 세마포어 0으로 초기화 */
+	sema_init(&t->sema_fork, 0); /* fork 세마포어 0으로 초기화 */
+
+	/* 자식 리스트에 추가 */
+	list_push_back(&thread_current()->children_list, &t->child_elem);
+
+	// * 파일 디스크립터 초기값 설정
+	t->fdt = palloc_get_page(PAL_ZERO);
+	if (t->fdt == NULL) { return TID_ERROR;	}
+
+	t->fdt[0] = 1;
+	t->fdt[1] = 2;
+	t->next_fd = 2;
+	/* ------------ USERPROG ------------ */
 
 	/* Add to run queue. */
 	thread_unblock(t);
@@ -580,6 +600,9 @@ init_thread(struct thread *t, const char *name, int priority)
 	/* MLFQ 자료구조 초기화 */
 	t->nice = NICE_DEFAULT;
 	t->recent_cpu = RECENT_CPU_DEFAULT;
+
+	/* USERPROG */
+	list_init(&t->children_list);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
