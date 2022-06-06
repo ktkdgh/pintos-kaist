@@ -12,6 +12,7 @@ void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 
 /* System call.
+
  *
  * Previously system call services was handled by the interrupt handler
  * (e.g. int 0x80 in linux). However, in x86-64, the manufacturer supplies
