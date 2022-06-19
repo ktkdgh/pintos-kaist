@@ -26,7 +26,8 @@ static const struct page_operations anon_ops = {
 };
 
 /* Initialize the data for anonymous pages */
-void vm_anon_init(void) {
+void vm_anon_init(void)
+{
     /* TODO: Set up the swap_disk. */
     swap_disk = disk_get(1, 1);
     disk_bitmap = bitmap_create((size_t)disk_size(swap_disk));
@@ -34,7 +35,8 @@ void vm_anon_init(void) {
 }
 
 /* Initialize the file mapping */
-bool anon_initializer(struct page *page, enum vm_type type, void *kva) {
+bool anon_initializer(struct page *page, enum vm_type type, void *kva)
+{
     /* Set up the handler */
     page->operations = &anon_ops;
 
@@ -47,7 +49,9 @@ bool anon_initializer(struct page *page, enum vm_type type, void *kva) {
 
 /* Swap in the page by read contents from the swap disk. */
 static bool
-anon_swap_in(struct page *page, void *kva) {
+anon_swap_in(struct page *page, void *kva)
+{
+    printf("anon_swap_in\n");
     struct anon_page *anon_page = &page->anon;
 
     if (anon_page->sec_no == SIZE_MAX)
@@ -56,11 +60,13 @@ anon_swap_in(struct page *page, void *kva) {
     lock_acquire(&bitmap_lock);
     bool check = bitmap_contains(disk_bitmap, anon_page->sec_no, 8, false);
     lock_release(&bitmap_lock);
-    if (check) {
+    if (check)
+    {
         return false;
     }
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++)
+    {
         disk_read(swap_disk, anon_page->sec_no + i, kva + i * DISK_SECTOR_SIZE);
     }
 
@@ -73,7 +79,9 @@ anon_swap_in(struct page *page, void *kva) {
 
 /* Swap out the page by writing contents to the swap disk. */
 static bool
-anon_swap_out(struct page *page) {
+anon_swap_out(struct page *page)
+{
+    printf("anon_swap_out\n");
     struct anon_page *anon_page = &page->anon;
 
     lock_acquire(&bitmap_lock);
@@ -84,7 +92,8 @@ anon_swap_out(struct page *page) {
 
     anon_page->sec_no = sec_no;
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++)
+    {
         disk_write(swap_disk, sec_no + i, page->frame->kva + i * DISK_SECTOR_SIZE);
     }
 
@@ -97,10 +106,12 @@ anon_swap_out(struct page *page) {
 
 /* Destroy the anonymous page. PAGE will be freed by the caller. */
 static void
-anon_destroy(struct page *page) {
+anon_destroy(struct page *page)
+{
     struct anon_page *anon_page = &page->anon;
 
-    if (page->frame != NULL) {
+    if (page->frame != NULL)
+    {
         lock_acquire(&lru_lock);
         list_remove(&(page->frame->lru_elem));
         lock_release(&lru_lock);
