@@ -7,7 +7,7 @@
 #include "tests/main.h"
 #include "tests/vm/large.inc"
 
-#define CHILD_CNT 30
+#define CHILD_CNT 10
 
 void test_main(void)
 {

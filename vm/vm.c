@@ -274,7 +274,7 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr,
         return false;
 
     page = spt_find_page(spt, addr);
-    if (write && !not_present && page->copy_writable)
+    if (write && !not_present && page->copy_writable && page)
     {
         // printf("not present is false\n");
         return vm_handle_wp(page);
@@ -289,6 +289,7 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr,
             vm_stack_growth(addr);
             return true;
         }
+        return false;
         // printf("page->writable : %d\n", page->writable);
         // printf("write : %d\n", write);
         // printf("EQUALS ? : %d\n", page->writable == write);
@@ -298,6 +299,8 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr,
         //     return vm_handle_wp(page);
         // };
     }
+    if (write && !page->writable)
+        return false;
     // printf("page->writable : %d\n", page->writable);
     // printf("write : %d\n", write);
     // printf("EQUALS ? : %d\n", page->writable == write);
@@ -428,7 +431,8 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst,
                 // printf("child set page flase \n");
                 return false;
             }
-            pml4_clear_page(t->pml4, tmp->va);
+            // pml4_clear_page(t->pml4, tmp->va);
+            // pml4_destroy(t->pml4);
             if (pml4_set_page(t->pml4, tmp->va, tmp->frame->kva, 0) == false)
             {
                 // printf("parent set page flase \n");

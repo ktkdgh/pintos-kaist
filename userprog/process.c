@@ -479,6 +479,9 @@ void process_exit(void)
     }
 
     process_cleanup();
+    // #ifdef VM
+    //     printf("ifdef VM\n");
+    // #endif
     if (exit_info_tmp != NULL)
         sema_up(&(exit_info_tmp->sema));
 }
@@ -491,7 +494,8 @@ process_cleanup(void)
 
 #ifdef VM
     supplemental_page_table_kill(&curr->spt);
-
+    // palloc_free_page((void *)curr->pml4);
+    return;
 #endif
 
     uint64_t *pml4;
@@ -509,7 +513,10 @@ process_cleanup(void)
          * that's been freed (and cleared). */
         curr->pml4 = NULL;
         pml4_activate(NULL);
+        // pml4_clear_page(curr->pml4,);
         pml4_destroy(pml4);
+        // pml4_is_dirty()
+        return;
     }
 }
 

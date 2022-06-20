@@ -115,7 +115,7 @@ anon_destroy(struct page *page)
         lock_acquire(&lru_lock);
         list_remove(&(page->frame->lru_elem));
         lock_release(&lru_lock);
-
+        // pte write bit 1 -> free
         free(page->frame);
     }
     if (anon_page->sec_no != SIZE_MAX)
