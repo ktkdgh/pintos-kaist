@@ -230,6 +230,20 @@ vm_stack_growth(void *addr)
 static bool
 vm_handle_wp(struct page *page)
 {
+    printf("i in vm handle wp\n");
+    printf("page -> frame : %p\n", page->frame);
+    void *kva = page->frame->kva;
+    printf("before palloc\n");
+    page->frame->kva = palloc_get_page(PAL_USER);
+    if (page->frame->kva == NULL)
+    {
+        printf("test\n");
+        if (!vm_do_claim_page(page))
+            return false;
+    }
+    memcpy(page->frame->kva, kva, PGSIZE);
+
+    return true;
 }
 
 /* Return true on success */
@@ -258,8 +272,11 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr,
         }
         return false;
     }
-    if (write && !not_present)
-        return false;
+    if (write && page->frame != NULL)
+    {
+        printf("wp\n");
+        return vm_handle_wp(page);
+    };
 
     return vm_do_claim_page(page);
 }
