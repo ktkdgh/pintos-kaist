@@ -231,25 +231,47 @@ static bool
 vm_handle_wp(struct page *page)
 {
     printf("i in vm handle wp\n");
-    printf("page -> frame : %p\n", page->frame);
-    void *kva = page->frame->kva;
-    printf("before palloc\n");
-    page->frame->kva = palloc_get_page(PAL_USER);
-    if (page->frame->kva == NULL)
-    {
-        printf("test\n");
-        if (!vm_do_claim_page(page))
-            return false;
-    }
-    memcpy(page->frame->kva, kva, PGSIZE);
+    // printf("page -> frame : %p\n", page->frame);
+    // printf("==============\n");
+    // if (!vm_do_claim_page(page))
+    //     return false;
+    printf("page->frame : %p\n", page);
+    void *parent_kva = page->frame->kva;
+    printf("parent_kva :%p\n", page->frame->kva);
+    struct frame *get_frame = vm_get_frame();
+    page->frame = get_frame;
+    get_frame->page = page;
+
+    printf("memcpy before\n");
+    memcpy(page->frame->kva, parent_kva, PGSIZE);
+    printf("memcpy after\n");
+
+    pml4_set_page(thread_current()->pml4, page->va, get_frame->kva, page->copy_writable);
 
     return true;
+    // void *kva = page->frame->kva;
+    // printf("before palloc\n");
+    // page->frame->kva = palloc_get_page(PAL_USER);
+    // if (page->frame->kva == NULL)
+    // {
+    //     printf("test\n");
+    //     if (!vm_do_claim_page(page))
+    //         return false;
+    // }
+    // memcpy(page->frame->kva, kva, PGSIZE);
+
+    // return true;
 }
 
 /* Return true on success */
 bool vm_try_handle_fault(struct intr_frame *f, void *addr,
                          bool user, bool write, bool not_present)
 {
+    // printf("handle fault\n");
+    // printf("addr : %p\n", addr);
+    // printf("user : %d\n", user);
+    // printf("not_present:%d\n", not_present);
+    // printf("write : %d\n", write);
     struct supplemental_page_table *spt = &thread_current()->spt;
     struct page *page = NULL;
     /* TODO: Validate the fault */
@@ -257,10 +279,14 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr,
     if (is_kernel_vaddr(addr) && user)
         return false;
 
-    if (not_present == false)
-        return false;
-
     page = spt_find_page(spt, addr);
+    if (write && !not_present)
+    {
+        printf("not present is false\n");
+        return vm_handle_wp(page);
+    }
+
+    // printf("page is NULL ? : %d \n", page == NULL);
     if (page == NULL)
     {
         struct thread *current_thread = thread_current();
@@ -270,15 +296,27 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr,
             vm_stack_growth(addr);
             return true;
         }
-        return false;
+        // printf("page->writable : %d\n", page->writable);
+        // printf("write : %d\n", write);
+        // printf("EQUALS ? : %d\n", page->writable == write);
+        // if (page->writable && write)
+        // {
+        //     printf("wp\n");
+        //     return vm_handle_wp(page);
+        // };
     }
-    if (write && page->frame != NULL)
-    {
-        printf("wp\n");
-        return vm_handle_wp(page);
-    };
+    // printf("page->writable : %d\n", page->writable);
+    // printf("write : %d\n", write);
+    // printf("EQUALS ? : %d\n", page->writable == write);
+    // if (is_writable(thread_current()->pml4) && write)
+    // {
+    //     printf("wp\n");
+    //     return vm_handle_wp(page);
+    // };
 
-    return vm_do_claim_page(page);
+    if (vm_do_claim_page(page))
+        return true;
+    return false;
 }
 
 /* Free the page.
@@ -353,7 +391,6 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst,
                                   struct supplemental_page_table *src)
 {
     struct hash_iterator iter;
-
     hash_first(&iter, &(src->spt));
     while (hash_next(&iter))
     {
@@ -374,16 +411,27 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst,
             }
             break;
         case VM_ANON:
-            vm_alloc_page(tmp->operations->type, tmp->va, tmp->writable);
+            // printf("VMANON\n");
+            vm_alloc_page(tmp->operations->type, tmp->va, 0);
             cpy = spt_find_page(dst, tmp->va);
+
             if (cpy == NULL)
             {
                 return false;
             }
+            cpy->copy_writable = tmp->writable;
             struct frame *cpy_frame = malloc(sizeof(struct frame));
             cpy->frame = cpy_frame;
             cpy_frame->page = cpy;
             cpy_frame->kva = tmp->frame->kva;
+            struct thread *t = thread_current();
+            lock_acquire(&lru_lock);
+            list_push_back(&lru, &(cpy_frame->lru_elem));
+            lock_release(&lru_lock);
+
+            if (pml4_set_page(t->pml4, cpy->va, cpy_frame->kva, 0) == false)
+                return false;
+
             // cow - vm_do_claim_page가 페이지를 할당받으니 주석
             // if (vm_do_claim_page(cpy) == false)
             // {
