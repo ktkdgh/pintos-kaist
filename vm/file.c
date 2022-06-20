@@ -36,7 +36,7 @@ bool file_backed_initializer(struct page *page, enum vm_type type, void *kva)
 static bool
 file_backed_swap_in(struct page *page, void *kva)
 {
-    printf("file_backed_swap_in\n");
+    // printf("file_backed_swap_in\n");
     struct file_page *file_page = &page->file;
 
     lock_acquire(&filesys_lock);
@@ -55,7 +55,7 @@ file_backed_swap_in(struct page *page, void *kva)
 static bool
 file_backed_swap_out(struct page *page)
 {
-    printf("file_backed_swap_out\n");
+    // printf("file_backed_swap_out\n");
     struct file_page *file_page = &page->file;
     struct thread *curr_thread = thread_current();
 
