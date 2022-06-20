@@ -363,11 +363,17 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst,
             {
                 return false;
             }
-            if (vm_do_claim_page(cpy) == false)
-            {
-                return false;
-            }
-            memcpy(cpy->frame->kva, tmp->frame->kva, PGSIZE);
+            struct frame *cpy_frame = malloc(sizeof(struct frame));
+            cpy->frame = cpy_frame;
+            cpy_frame->page = cpy;
+            cpy_frame->kva = tmp->frame->kva;
+            // cow - vm_do_claim_page가 페이지를 할당받으니 주석
+            // if (vm_do_claim_page(cpy) == false)
+            // {
+            //     return false;
+            // }
+            // cow
+            // memcpy(cpy->frame->kva, tmp->frame->kva, PGSIZE);
             break;
         case VM_FILE:
             break;
