@@ -233,7 +233,6 @@ vm_handle_wp(struct page *page)
   page->frame->kva = palloc_get_page(PAL_USER);
 
   memcpy(page->frame->kva, parent_kva, PGSIZE);
-
   pml4_set_page(thread_current()->pml4, page->va, page->frame->kva, page->copy_writable);
 
   return true;
