@@ -231,10 +231,6 @@ vm_handle_wp(struct page *page)
 {
   void *parent_kva = page->frame->kva;
   page->frame->kva = palloc_get_page(PAL_USER);
-  // struct frame *get_frame = vm_get_frame();
-
-  // page->frame = get_frame;
-  // get_frame->page = page;
 
   memcpy(page->frame->kva, parent_kva, PGSIZE);
 
